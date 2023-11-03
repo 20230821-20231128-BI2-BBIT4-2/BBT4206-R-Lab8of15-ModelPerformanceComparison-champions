@@ -1,0 +1,253 @@
+---
+title: "Business Intelligence Project"
+author: "<Champions>"
+date: "<08/10/2023>"
+output:
+  github_document: 
+    toc: yes
+    toc_depth: 4
+    fig_width: 6
+    fig_height: 4
+    df_print: default
+editor_options:
+  chunk_output_type: console
+---
+
+# Student Details
+
++----------------------------------------------+-----------------------+
+| **Student ID Number**                        | 134111                |
+|                                              |                       |
+|                                              | 133996                |
+|                                              |                       |
+|                                              | 126761                |
+|                                              |                       |
+|                                              | 135859                |
+|                                              |                       |
+|                                              | 127707                |
++----------------------------------------------+-----------------------+
+| **Student Name**                             | Juma Immaculate Haayo |
+|                                              |                       |
+|                                              | Trevor Ngugi          |
+|                                              |                       |
+|                                              | Virginia Wanjiru      |
+|                                              |                       |
+|                                              | Pauline Wang'ombe     |
+|                                              |                       |
+|                                              | Clarice Gitonga       |
++----------------------------------------------+-----------------------+
+| **BBIT 4.2 Group**                           | B                     |
++----------------------------------------------+-----------------------+
+| **BI Project Group Name/ID (if applicable)** | Champions             |
++----------------------------------------------+-----------------------+
+
+# Setup Chunk
+
+**Note:** the following KnitR options have been set as the global defaults: <BR> `knitr::opts_chunk$set(echo = TRUE, warning = FALSE, eval = TRUE, collapse = FALSE, tidy = TRUE)`.
+
+More KnitR options are documented here <https://bookdown.org/yihui/rmarkdown-cookbook/chunk-options.html> and here <https://yihui.org/knitr/options/>.
+
+```{r setup, include=FALSE}
+library(formatR)
+knitr::opts_chunk$set(
+  warning = FALSE,
+  collapse = FALSE
+)
+```
+
+
+#  Step 1 .Install and load all the packages
+We installed all the packages that will enable us execute this lab.
+
+```{r Your 1st Code Chunk}
+
+## mlbench ----
+if (require("mlbench")) {
+  require("mlbench")
+} else {
+  install.packages("mlbench", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+## caret ----
+if (require("caret")) {
+  require("caret")
+} else {
+  install.packages("caret", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+## kernlab ----
+if (require("kernlab")) {
+  require("kernlab")
+} else {
+  install.packages("kernlab", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+## randomForest ----
+if (require("randomForest")) {
+  require("randomForest")
+} else {
+  install.packages("randomForest", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+
+```
+
+#  Step 2. Load the dataset
+We loaded the Glass dataset which uses the mlbench package
+
+```{r Your 2nd Code Chunk}
+
+if (require("mlbench")) {
+  require("mlbench")
+} else {
+  install.packages("mlbench", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+data("Glass")
+
+```
+
+# Step 3. The Resamples Function
+
+The "resamples()"  function checks that the models are comparable and that
+they used the same training scheme ("train_control" configuration).
+To do this, after the models are trained, they are added to a list and we
+pass this list of models as an argument to the resamples() function in R.
+
+## 3.a.Train the models
+We train the following models, all of which are using 10-fold repeated cross
+validation with 3 repeats:
+  LDA
+  CART
+  KNN
+  SVM
+ Random Forest
+ 
+
+```{r Your 3rd Code Chunk}
+
+train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+### LDA ----
+set.seed(7)
+type_model_lda <- train(Type ~ ., data = Glass,
+                            method = "lda", trControl = train_control)
+
+### CART ----
+set.seed(7)
+type_model_cart <- train(Type ~ ., data = Glass,
+                             method = "rpart", trControl = train_control)
+
+### KNN ----
+set.seed(7)
+type_model_knn <- train(Type ~ ., data = Glass,
+                            method = "knn", trControl = train_control)
+
+### SVM ----
+set.seed(7)
+type_model_svm <- train(Type ~ ., data = Glass,
+                            method = "svmRadial", trControl = train_control)
+
+### Random Forest ----
+set.seed(7)
+type_model_rf <- train(Type ~ ., data = Glass,
+                           method = "rf", trControl = train_control)
+
+```
+
+
+## 3.b. Call the `resamples` Function
+We then create a list of the model results and pass the list as an argument
+ to the `resamples` function.
+ 
+```{r Your 4th Code Chunk}
+results <- resamples(list(LDA = type_model_lda, CART = type_model_cart,
+                          KNN = type_model_knn, SVM = type_model_svm,
+                          RF = type_model_rf))
+
+
+```
+
+# STEP 4. Display the Results
+
+## 1. Table Summary
+It creates a table with one model per row
+and its corresponding evaluation metrics displayed per column
+
+```{r Your 5th Code Chunk}
+
+summary(results)
+
+```
+
+## 2. Box and Whisker Plot
+Is useful for visually observing the spread of the estimated accuracies for different algorithms and how they relate.
+
+```{r Your 6th Code Chunk}
+
+scales <- list(x = list(relation = "free"), y = list(relation = "free"))
+bwplot(results, scales = scales)
+
+```
+
+## 3. Dot Plots 
+
+They show both the mean estimated accuracy as well as the 95% confidence interval (e.g. the range in which 95% of observed scores fell).
+
+```{r Your 7th Code Chunk}
+
+scales <- list(x = list(relation = "free"), y = list(relation = "free"))
+bwplot(results, scales = scales)
+
+```
+
+## 4. Scatter Plot Matrix
+This is useful when considering whether the predictions from two different algorithms are correlated. If weakly correlated, then they are good candidates for being combined in an ensemble prediction.
+
+```{r Your 8th Code Chunk}
+
+splom(results)
+
+```
+
+## 5. Pairwise xyPlots
+You can zoom in on one pairwise comparison of the accuracy of trial-folds for two models using an xyplot.
+
+xyplot plots to compare models
+```{r Your 9th Code Chunk}
+
+xyplot(results, models = c("LDA", "SVM"))
+
+```
+
+### or
+```{r Your 10th Code Chunk}
+
+xyplot(results, models = c("SVM", "CART"))
+
+```
+
+## 6. Statistical Significance Tests
+Calculates the significance of the differences between the
+metric distributions of the various models.
+
+### Upper Diagonal
+Shows the estimated difference between the distributions
+
+
+### Lower Diagonal
+Contains p-values of the null hypothesis.
+The null hypothesis is a claim that "the distributions are the same".
+A lower p-value is better (more significant).
+
+
+```{r Your 11th Code Chunk}
+
+xyplot(results, models = c("SVM", "CART"))
+
+```
